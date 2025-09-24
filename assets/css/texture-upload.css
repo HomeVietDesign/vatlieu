@@ -1,0 +1,76 @@
+#texture-upload-toast.toast{
+	--bs-toast-max-width: 536px;
+	--bs-toast-bg: #fff;
+}
+#texture-upload-statusbars .statusbar {
+
+}
+
+#texture-upload-statusbars .progressBar {
+	width: 200px;
+	height: 22px;
+	border: 1px solid #ddd;
+	border-radius: 5px; 
+	overflow: hidden;
+	display:inline-block;
+	margin:0px 10px 5px 5px;
+	vertical-align:top;
+}
+#texture-upload-statusbars .progressBar div {
+	height: 100%;
+	color: #fff;
+	text-align: right;
+	line-height: 22px; /* same as #progressBar height if we want text middle aligned */
+	width: 0;
+	background-color: #0ba1b5;
+	border-radius: 3px; 
+}
+#texture-upload-statusbars .progressBar.error {
+	border-color: #f00;
+	text-align: center;
+	color: #f00;
+}
+#texture-upload-statusbars .progressBar.completed {
+	border-color: rgb(25 135 84);
+	text-align: center;
+	color: rgb(25 135 84);
+}
+#texture-upload-statusbars .filename {
+	display:inline-block;
+	vertical-align:top;
+	width:150px;
+}
+#texture-upload-statusbars .filesize {
+	display:inline-block;
+	vertical-align:top;
+	color:#30693D;
+	width:100px;
+	margin-left:10px;
+	margin-right:5px;
+}
+#texture-upload-statusbars .abort-wrap {
+	width: 50px;
+}
+#texture-upload-statusbars .abort {
+	background-color:#A8352F;
+	-moz-border-radius:4px;
+	-webkit-border-radius:4px;
+	border-radius:4px;
+	display:inline-block;
+	color:#fff;
+	font-family:arial;
+	font-size:10px;
+	font-weight:normal;
+	padding:4px 10px;
+	cursor:pointer;
+	vertical-align:top;
+	border: 0;
+}
+#texture-upload-statusbars .abort:disabled {
+	cursor: default;
+	opacity: .6;
+}
+
+#texture-upload-toast .toast-body {
+	max-height: 300px;
+}

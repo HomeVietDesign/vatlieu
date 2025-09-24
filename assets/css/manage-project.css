@@ -1,0 +1,10 @@
+.custom_inline_hidden,
+.term-slug-wrap,
+.inline-edit-col label:nth-child(2),
+.term-parent-wrap {
+	display: none;
+}
+#tag-description,
+#description {
+	height: 30px;
+}

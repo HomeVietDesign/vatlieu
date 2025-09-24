@@ -1,0 +1,11 @@
+#cgroupdiv,
+#newsegment_parent,
+#newcontractor_cat_parent,
+#newlocation_parent,
+#newcontractor_source_parent,
+#wp-admin-bar-view,
+#edit-slug-box,
+#newoccupation_parent,
+#newcgroup_parent {
+	display: none;
+}

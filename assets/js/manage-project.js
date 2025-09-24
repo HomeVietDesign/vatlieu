@@ -1,9 +1,9 @@
 window.addEventListener('DOMContentLoaded', function(){
 	jQuery(function($){
-		$('label[for="tag-name"],label[for="name"]').html('Tên gọi');
+		$('label[for="tag-name"],label[for="name"]').html('Tên dự án');
 		$('label[for="tag-description"],label[for="description"]').html('Số điện thoại');
 		$('#description-description').html('Số điện thoại khách hàng dùng làm số định danh dự án.');
-		$('#name-description').html('Tên gọi hiển thị thay cho số điện thoại để dễ nhận biết.');
+		//$('#name-description').html('Tên gọi hiển thị thay cho số điện thoại để dễ nhận biết.');
 		
 		/*$('.form-field.term-description-wrap').insertBefore($('.form-field.term-name-wrap'));
 

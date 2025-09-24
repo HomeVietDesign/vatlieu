@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded', function(){
 			$(".contractors-sortable").sortable({
 				zIndex: 1022,
 				//placeholder: "ui-state-highlight",
+				cancel: ".no-drag",
 				update: function( event, ui ) {
 					let $list = $(this).closest('.occupation'),
 						ids = [];

@@ -14,6 +14,9 @@ class Texture {
 					echo '<i>(No image)</i>';
 				}
 				break;
+			case 'name':
+				echo esc_html(mb_strtoupper($texture->post->post_name));
+				break;
 		}
 	}
 
@@ -21,9 +24,14 @@ class Texture {
 		$cb = $columns['cb'];
 		unset($columns['cb']);
 
+		$title = $columns['title'];
+		unset($columns['title']);
+
 		$new_columns = ['cb' => $cb];
 
 		$new_columns['image'] = 'Ảnh';
+		$new_columns['title'] = $title;
+		$new_columns['name'] = 'Tên';
 
 		$columns = array_merge($new_columns, $columns);
 

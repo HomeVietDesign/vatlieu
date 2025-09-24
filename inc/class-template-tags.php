@@ -7,6 +7,15 @@ namespace HomeViet;
 
 class Template_Tags {
 
+	public static function get_single_texture_document_title($title) {
+		if(is_singular('texture')) {
+			global $post;
+			$title = mb_strtoupper($post->post_name);
+		}
+
+		return $title;
+	}
+
 	public static function texture_contractors($args) {
 		global $post, $texture;
 		if($args['project']) {
@@ -412,10 +421,10 @@ class Template_Tags {
 								
 							</div>
 							<div class="info py-3 px-1">
-								<h3 class="text-center text-uppercase fs-6 m-0 fw-bold"><?php echo esc_html($post->post_title); ?></h3>
+								<h3 class="text-center text-uppercase fs-6 m-0 fw-bold no-drag"><?php echo esc_html($post->post_title); ?></h3>
 								<div class="btn-contacts d-flex p-2 justify-content-center">
 									<?php if($phone_number) { ?>
-									<div class="bg-success text-white py-1 px-2 m-1 rounded"><?php echo esc_html($phone_number); ?></div>
+									<div class="bg-success text-white py-1 px-2 m-1 rounded no-drag"><?php echo esc_html($phone_number); ?></div>
 									<a class="bg-danger text-white py-1 px-2 m-1 rounded" href="tel:<?php echo esc_attr($phone_number); ?>">Gọi điện</a>
 									<a class="bg-primary text-white py-1 px-2 m-1 rounded" href="https://zalo.me/<?php echo esc_attr($phone_number); ?>">Nhắn Zalo</a>
 									<?php } ?>

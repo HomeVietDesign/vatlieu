@@ -25,5 +25,11 @@ $options = [
 		'source' => '',
 		'choices' => $taxes,
 		'limit' => 100
-	]
+	],
+	'image' => [
+		'type' => 'upload',
+		'label' => 'Ảnh mô tả',
+		'images_only' => true,
+		'files_ext' => ['png', 'jpg', 'jpeg'],
+	],
 ];

@@ -2,20 +2,11 @@
 /**
  * 
  */
-//echo __FILE__;
-
-//get_template_part( 'archive' );
 
 get_header();
-/*
-while (have_posts()) {
-	the_post();
-	the_content();
-}
-*/
 ?>
 <div class="container py-5">
-	<div class="d-flex justify-content-center">
+	<div class="row g-4 justify-content-center">
 		<?php
 		$design_cats = get_terms([
 			'taxonomy' => 'design_cat',
@@ -25,8 +16,19 @@ while (have_posts()) {
 		if(!($design_cats instanceof \WP_Error) && !empty($design_cats)) {
 			foreach ($design_cats as $key => $value) {
 				$url = get_term_link( $value, $value->taxonomy );
+				$thumbnail = fw_get_db_term_option($value->term_id, $value->taxonomy, 'image');
+				//debug($thumbnail);
 				?>
-				<a class="d-block p-5 m-3 fs-1 text-uppercase text-bg-dark fw-bold shadow rounded" href="<?=esc_url($url)?>"><?=esc_html($value->name)?></a>
+				<a class="col-lg-4 d-block p-3 m-3 fs-1 text-uppercase bg-secondary fw-bold shadow rounded text-warning" href="<?=esc_url($url)?>">
+					<span class="thumbnail d-block ratio ratio-16x9 mb-3">
+					<?php
+					if(!empty($thumbnail)) {
+						echo wp_get_attachment_image( $thumbnail['attachment_id'], 'large' );
+					}
+					?>
+					</span>
+					<span class="d-block text-center"><?=esc_html($value->name)?></span>
+				</a>
 				<?php
 			}
 		}

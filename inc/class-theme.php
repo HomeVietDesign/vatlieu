@@ -76,6 +76,7 @@ class Theme {
 		add_action('wp_head', ['\HomeViet\Template_Tags', 'head_scripts'], 50);
 		//add_action('wp_head', ['\HomeViet\Template_Tags', 'head_youtube_scripts'], 10);
 		add_action('wp_head', ['\HomeViet\Template_Tags', 'noindex'], 10);
+		add_filter('pre_get_document_title', ['\HomeViet\Template_Tags', 'get_single_texture_document_title'], 10);
 	}
 
 	private function hooks_header() {
@@ -143,6 +144,10 @@ class Theme {
 		include_once THEME_DIR.'/inc/class-authentication.php';
 		include_once THEME_DIR.'/inc/class-background-process.php';
 		include_once THEME_DIR.'/inc/class-custom-types.php';
+
+		if(defined('CUSTOMTAXORDER_VER')) {
+			include_once THEME_DIR.'/inc/custom-taxonomy-order-ne/class-custom-taxonomy-order-ne.php';
+		}
 
 		if(is_admin()) {
 			include_once THEME_DIR.'/inc/admin/class-admin.php';

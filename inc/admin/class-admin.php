@@ -79,6 +79,7 @@ class Main {
 		add_action( 'created_project', ['\HomeViet\Admin\Project', 'auto_slug'] );
 		add_action( 'manage_edit-project_columns', ['\HomeViet\Admin\Project', 'manage_edit_column_header'] );
 		add_action( 'manage_project_custom_column', ['\HomeViet\Admin\Project', 'manage_edit_columns_value'], 15, 3 );
+		
 		//add_action( 'quick_edit_custom_box', ['\HomeViet\Admin\Project', 'quick_edit_custom_box'], 10, 3 );
 		//add_action( 'edited_project', ['\HomeViet\Admin\Project', 'quick_edit_save'], 10, 1 );
 

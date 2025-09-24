@@ -59,7 +59,7 @@ class Project {
 			<fieldset style="padding-right: 12px;">
 				<div class="inline-edit-col">
 				<label>
-					<span class="title">Tên gọi</span>
+					<span class="title">Tên dự án</span>
 					<span class="input-text-wrap"><input type="text" name="desc" class="ptitle" value="" /></span>
 				</label>
 			</fieldset>
@@ -89,7 +89,7 @@ class Project {
 
 		$new_columns = [
 			'cb' => 'Chọn toàn bộ',
-			'name' => 'Tên gọi',
+			'name' => 'Tên dự án',
 			'desc' => 'Số điện thoại',
 			//'location' => 'Địa điểm',
 			'segment' => 'Phân khúc'

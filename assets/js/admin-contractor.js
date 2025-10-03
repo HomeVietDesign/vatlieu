@@ -5,8 +5,6 @@ window.addEventListener('DOMContentLoaded', function(){
 			ajax_check = null;
 
 		phone_number_el.parent().append('<span id="_phone_number_error" class="required"></span>');
-
-		console.log(phone_number_el);
 		
 		function check_contractor_exists() {
 			let phone_number = phone_number_el.val(),
@@ -67,7 +65,41 @@ window.addEventListener('DOMContentLoaded', function(){
 
 			setTimeout(function(){
 				let $occupation_checklist = $('body').find('tr#edit-'+id).find('ul.occupation-checklist');
-				$('<span class="input-text-wrap"><input class="find-list-occupation" type="text" placeholder="Tìm..."></span>').insertBefore($occupation_checklist);
+				let $occupation_checklist_input = $occupation_checklist.prev('input[type="hidden"]');
+				let $occupation_checklist_label = $occupation_checklist_input.prev('.title');
+				let $occupation_checklist_wrap = $('<div class="quick-tax-wrap"></div>');
+				//console.log($occupation_checklist_label);
+
+				
+				$occupation_checklist_label.appendTo($occupation_checklist_wrap);
+				$('<span class="input-text-wrap"><input class="find-list-occupation" type="text" placeholder="Tìm..."></span>').appendTo($occupation_checklist_wrap);
+				$occupation_checklist.appendTo($occupation_checklist_wrap);
+				$occupation_checklist_wrap.insertAfter($occupation_checklist_input);
+
+				let $contractor_source_checklist = $('body').find('tr#edit-'+id).find('ul.contractor_source-checklist');
+				let $contractor_source_checklist_input = $contractor_source_checklist.prev('input[type="hidden"]');
+				let $contractor_source_checklist_label = $contractor_source_checklist_input.prev('.title');
+				let $contractor_source_checklist_wrap = $('<div class="quick-tax-wrap"></div>');
+				//console.log($contractor_source_checklist_label);
+
+				
+				$contractor_source_checklist_label.appendTo($contractor_source_checklist_wrap);
+				$('<span class="input-text-wrap"><input class="find-list-contractor_source" type="text" placeholder="Tìm..."></span>').appendTo($contractor_source_checklist_wrap);
+				$contractor_source_checklist.appendTo($contractor_source_checklist_wrap);
+				$contractor_source_checklist_wrap.insertAfter($contractor_source_checklist_input);
+
+				let $location_checklist = $('body').find('tr#edit-'+id).find('ul.location-checklist');
+				let $location_checklist_input = $location_checklist.prev('input[type="hidden"]');
+				let $location_checklist_label = $location_checklist_input.prev('.title');
+				let $location_checklist_wrap = $('<div class="quick-tax-wrap"></div>');
+				//console.log($location_checklist_label);
+
+				
+				$location_checklist_label.appendTo($location_checklist_wrap);
+				$('<span class="input-text-wrap"><input class="find-list-location" type="text" placeholder="Tìm..."></span>').appendTo($location_checklist_wrap);
+				$location_checklist.appendTo($location_checklist_wrap);
+				$location_checklist_wrap.insertAfter($location_checklist_input);
+				
 			}, 100);
 		});
 
@@ -75,6 +107,22 @@ window.addEventListener('DOMContentLoaded', function(){
 			let that = $(this),
 				s = that.val().toLowerCase();
 			$('ul.occupation-checklist li').filter(function() {
+				$(this).toggle($(this).text().toLowerCase().indexOf(s) > -1);
+			});
+		});
+
+		$(document).on('keyup change', 'input.find-list-contractor_source', function(e){
+			let that = $(this),
+				s = that.val().toLowerCase();
+			$('ul.contractor_source-checklist li').filter(function() {
+				$(this).toggle($(this).text().toLowerCase().indexOf(s) > -1);
+			});
+		});
+
+		$(document).on('keyup change', 'input.find-list-location', function(e){
+			let that = $(this),
+				s = that.val().toLowerCase();
+			$('ul.location-checklist li').filter(function() {
 				$(this).toggle($(this).text().toLowerCase().indexOf(s) > -1);
 			});
 		});

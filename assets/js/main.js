@@ -6,6 +6,223 @@ window.addEventListener('DOMContentLoaded', function(){
 
 	jQuery(function($){
 
+		$(document).on('click', '.add-to-removed', function(e){
+			if(confirm('Loại bỏ nhà thầu?')) {
+				let $button = $(this)
+					,texture = $button.data('texture')
+					,project = $button.data('project')
+					,contractor = $button.data('contractor')
+					;
+
+				$.ajax({
+					url: theme.ajax_url,
+					type: 'POST',
+					data: {
+						action: 'add_to_removed',
+						nonce: theme.nonce,
+						texture:texture,
+						project:project,
+						contractor:contractor
+					},
+					beforeSend: function(xhr) {
+						
+					},
+					success: function(response) {
+						
+						if(response['code']==200) {
+							if(response['html']!='') {
+								$('#project-contractors').html(response['html']['html']);
+								$('#project-local-contractors').html(response['html']['html_local']);
+								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
+									$('#'+key).html(value);
+								});
+
+								$('#removed-contractors').html(response['html']['html_removed']);
+
+								do_contractors_sortable();
+							}
+						}
+					},
+					error: function() {
+						
+					},
+					complete: function() {
+						
+					}
+				});
+			}
+		});
+
+		$(document).on('click', '.remove-from-removed', function(e){
+			if(confirm('Sử dụng nhà thầu?')) {
+				let $button = $(this)
+					,texture = $button.data('texture')
+					,project = $button.data('project')
+					,contractor = $button.data('contractor')
+					;
+				$.ajax({
+					url: theme.ajax_url,
+					type: 'POST',
+					data: {
+						action: 'remove_from_removed',
+						nonce: theme.nonce,
+						texture:texture,
+						project:project,
+						contractor:contractor
+					},
+					beforeSend: function(xhr) {
+						
+					},
+					success: function(response) {
+						//console.log(response);
+						if(response['code']==200) {
+							if(response['html']!='') {
+								//$('#project-contractors').html(response['html']['html']);
+								//$('#project-local-contractors').html(response['html']['html_local']);
+								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
+									$('#'+key).html(value);
+								});
+								$('#removed-contractors').html(response['html']['html_removed']);
+								do_contractors_sortable();
+							}
+						}
+					},
+					error: function() {
+						
+					},
+					complete: function() {
+						
+					}
+				});
+			}
+		});
+
+		$(document).on('submit', '#frm-add-new-location', function(e){
+			e.preventDefault();
+			let $form = $(this)
+				,$button = $form.find('[type="submit"]')
+				,$response = $('#add-new-location-response')
+				,data = $form.serialize()
+				,formData = unserialize(data)
+				;
+			$button.prop('disabled', true);
+
+			$.ajax({
+				url: theme.ajax_url+'?action=add_new_location',
+				type: 'POST',
+				data: data,
+				dataType: 'json',
+				beforeSend: function() {
+					$response.html('<p class="text-primary">Đang xử lý...</p>');
+				},
+				success: function(response) {
+					if(response['code']==200) {
+						window.location.reload();
+						$('#edit-location .btn-close').trigger('click');
+							
+					} else if(response['code']==0) {
+						$('#edit-location .btn-close').trigger('click');
+					}
+
+					$response.html(response['msg']);
+				},
+				error: function(xhr) {
+					$response.html('<p class="text-danger">Có lỗi xảy ra. Xin vui lòng thử lại.</p>');
+				},
+				complete: function() {
+					$button.prop('disabled', false);
+				}
+			});
+		});
+
+		$(document).on('submit', '#frm-add-new-contractor', function(e){
+			e.preventDefault();
+			let $form = $(this)
+				,$button = $form.find('[type="submit"]')
+				,$response = $('#add-new-contractor-response')
+				,data = $form.serialize()
+				,formData = unserialize(data)
+				;
+			$button.prop('disabled', true);
+
+			$.ajax({
+				url: theme.ajax_url+'?action=add_new_contractor',
+				type: 'POST',
+				data: data,
+				dataType: 'json',
+				beforeSend: function() {
+					$response.html('<p class="text-primary">Đang xử lý...</p>');
+				},
+				success: function(response) {
+					if(response['code']==200) {
+						window.location.reload();
+						$('#edit-contractor .btn-close').trigger('click');
+							
+					} else if(response['code']==0) {
+						$('#edit-contractor .btn-close').trigger('click');
+					}
+
+					$response.html(response['msg']);
+				},
+				error: function(xhr) {
+					$response.html('<p class="text-danger">Có lỗi xảy ra. Xin vui lòng thử lại.</p>');
+				},
+				complete: function() {
+					$button.prop('disabled', false);
+				}
+			});
+		});
+
+		$('#contractor_source-selection').select2({
+			width: '100%',
+			dropdownCssClass: 'contractor_source-dropdown',
+			selectionCssClass: 'contractor_source-selection'
+		});
+
+		$('#location-selection').select2({
+			width: '100%',
+			dropdownCssClass: 'location-dropdown',
+			selectionCssClass: 'location-selection'
+		});
+
+		$(document).on('submit', '#frm-add-new-occupation', function(e){
+			e.preventDefault();
+			let $form = $(this)
+				,$button = $form.find('[type="submit"]')
+				,$response = $('#add-new-occupation-response')
+				,data = $form.serialize()
+				,formData = unserialize(data)
+				;
+			$button.prop('disabled', true);
+
+			$.ajax({
+				url: theme.ajax_url+'?action=add_new_occupation',
+				type: 'POST',
+				data: data,
+				dataType: 'json',
+				beforeSend: function() {
+					$response.html('<p class="text-primary">Đang xử lý...</p>');
+				},
+				success: function(response) {
+					if(response['code']==200) {
+						window.location.reload();
+						$('#edit-occupation .btn-close').trigger('click');
+							
+					} else if(response['code']==0) {
+						$('#edit-occupation .btn-close').trigger('click');
+					}
+
+					$response.html(response['msg']);
+				},
+				error: function(xhr) {
+					$response.html('<p class="text-danger">Có lỗi xảy ra. Xin vui lòng thử lại.</p>');
+				},
+				complete: function() {
+					$button.prop('disabled', false);
+				}
+			});
+		});
+
 		function do_contractors_sortable() {
 			$(".contractors-sortable").sortable({
 				zIndex: 1022,
@@ -74,7 +291,7 @@ window.addEventListener('DOMContentLoaded', function(){
 								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
 									$('#'+key).html(value);
 								});
-
+								$('#removed-contractors').html(response['html']['html_removed']);
 								do_contractors_sortable();
 							}
 						}
@@ -113,7 +330,7 @@ window.addEventListener('DOMContentLoaded', function(){
 						//console.log(response);
 						if(response['code']==200) {
 							if(response['html']!='') {
-								$('#project-contractors').html(response['html']['html']);
+								//$('#project-contractors').html(response['html']['html']);
 								$('#project-local-contractors').html(response['html']['html_local']);
 								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
 									$('#'+key).html(value);
@@ -160,7 +377,7 @@ window.addEventListener('DOMContentLoaded', function(){
 								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
 									$('#'+key).html(value);
 								});
-
+								$('#removed-contractors').html(response['html']['html_removed']);
 								do_contractors_sortable();
 							}
 						}
@@ -200,11 +417,11 @@ window.addEventListener('DOMContentLoaded', function(){
 						if(response['code']==200) {
 							if(response['html']!='') {
 								$('#project-contractors').html(response['html']['html']);
-								$('#project-local-contractors').html(response['html']['html_local']);
+								//$('#project-local-contractors').html(response['html']['html_local']);
 								Object.entries(response['html']['html_cats']).forEach(([key, value]) => {
 									$('#'+key).html(value);
 								});
-
+								//$('#removed-contractors').html(response['html']['html_removed']);
 								do_contractors_sortable();
 							}
 						}
@@ -224,8 +441,8 @@ window.addEventListener('DOMContentLoaded', function(){
 			let $modal = $(this),
 				$button = $(event.relatedTarget)
 				,$body = $modal.find('.modal-body')
-				,texture = $button.data('texture')
-				,project = $button.data('project')
+				// ,texture = $button.data('texture')
+				// ,project = $button.data('project')
 				,contractor = $button.data('contractor')
 				,contractor_title = $button.data('contractor-title')
 				;
@@ -237,8 +454,8 @@ window.addEventListener('DOMContentLoaded', function(){
 				type: 'GET',
 				data: {
 					action: 'get_edit_contractor_form',
-					texture:texture,
-					project:project,
+					// texture:texture,
+					// project:project,
 					contractor:contractor
 				},
 				beforeSend: function(xhr) {
@@ -246,10 +463,10 @@ window.addEventListener('DOMContentLoaded', function(){
 				},
 				success: function(response) {
 					$body.html(response);
-					// $('#cgroup-selection').select2({
-					// 	width: '100%',
-					// 	dropdownCssClass: 'cgroup-selection-dropdown'
-					// });
+					$('#edit-location-selection').select2({
+						width: '100%',
+						dropdownCssClass: 'location-selection-dropdown'
+					});
 				},
 				error: function() {
 					$body.text('Lỗi khi tải. Tắt mở lại.');
@@ -267,14 +484,9 @@ window.addEventListener('DOMContentLoaded', function(){
 			$body.text('');
 		});
 
-		// $(document).on('change', '#frm-edit-contractor .cgroup-check-input', function(e){
-		// 	$(this).closest('.form-check-wrap').siblings().find('.cgroup-check-input').prop('checked', false);
-		// });
-
 		$(document).on('submit', '#frm-edit-contractor', function(e){
 			e.preventDefault();
 			let $form = $(this)
-				//,formData = new FormData($form[0])
 				,$button = $form.find('[type="submit"]')
 				,$response = $('#edit-contractor-response')
 				,data = $form.serialize()
@@ -285,7 +497,6 @@ window.addEventListener('DOMContentLoaded', function(){
 			$.ajax({
 				url: theme.ajax_url+'?action=update_contractor',
 				type: 'POST',
-				//data: formData,
 				data: data,
 				dataType: 'json',
 				beforeSend: function() {
@@ -293,18 +504,17 @@ window.addEventListener('DOMContentLoaded', function(){
 				},
 				success: function(response) {
 					if(response['code']==200) {
-						$.ajax({
-							url: theme.ajax_url+'?action=get_contractor_info',
-							type: 'GET',
-							dataType: 'json',
-							data: data,
-							success: function(response) {
-								//$('.contractor-' + formData.contractor + ' .cgroups').html(response['cgroups']);
-								$('#edit-contractor .btn-close').trigger('click');
-							}
-						});
-
-						//$('#edit-contractor .btn-close').trigger('click');
+						// $.ajax({
+						// 	url: theme.ajax_url+'?action=get_contractor_info',
+						// 	type: 'GET',
+						// 	dataType: 'json',
+						// 	data: data,
+						// 	success: function(response) {
+						// 		//$('.contractor-' + formData.contractor + ' .cgroups').html(response['cgroups']);
+						// 		$('#edit-contractor .btn-close').trigger('click');
+						// 	}
+						// });
+						$('#edit-contractor .btn-close').trigger('click');
 					} else if(response['code']==0) {
 						$('#edit-contractor .btn-close').trigger('click');
 					}

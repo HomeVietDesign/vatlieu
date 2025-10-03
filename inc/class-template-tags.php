@@ -7,6 +7,37 @@ namespace HomeViet;
 
 class Template_Tags {
 
+	const OUT_PROJECT = 0; // chưa được đề cử
+
+	const IN_PROJECT = -1; // đề cử cho dự án
+
+	const IN_LOCATION = -2; // đề cử tại địa phương
+
+	const IN_REMOVED = -3; // loại bỏ
+
+	const IN_CATEGORY = -4; // loại bỏ
+
+	public static function remove_from_removed_contractors($contractor_id) {
+		$removed_contractors = self::get_removed_contractors();
+		if(in_array($contractor_id, $removed_contractors)) {
+			unset($removed_contractors[array_search($contractor_id, $removed_contractors)]);
+			update_option( 'removed_contractors', $removed_contractors );
+		}
+	}
+
+	public static function add_to_removed_contractors($contractor_id) {
+		$removed_contractors = self::get_removed_contractors();
+		if(!in_array($contractor_id, $removed_contractors)) {
+			$removed_contractors[] = $contractor_id;
+			debug_log($removed_contractors);
+			update_option( 'removed_contractors', $removed_contractors );
+		}
+	}
+
+	public static function get_removed_contractors() {
+		return get_option('removed_contractors', []);
+	}
+
 	public static function texture_contractors($args) {
 		global $post, $texture;
 		if($args['project']) {
@@ -132,9 +163,14 @@ class Template_Tags {
 								?>
 								<button type="submit" class="btn btn-sm btn-primary ms-3">Lưu</button>
 							</form>
-						<?php
 
+							<div class="d-flex align-items-center ms-2">
+								<button type="button" class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#add-new-occupation"><span class="dashicons dashicons-plus-alt2"></span> hạng mục</button>
+								<button type="button" class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#add-new-contractor"><span class="dashicons dashicons-plus-alt2"></span> nhà thầu</button>
+							</div>
+						<?php
 						} ?>
+						
 					</div>
 				</div>
 				<?php
@@ -143,16 +179,24 @@ class Template_Tags {
 
 					$project_contractors = $args['project']->get_contractors();
 					$project_local_contractors = $args['project']->get_local_contractors();
+					$removed_contractors = self::get_removed_contractors();
 
-					$excludes = array_merge($project_contractors, $project_local_contractors);
-					
-					//debug($project_contractors);
+					//$excludes = array_unique(array_merge($project_contractors, $project_local_contractors,$removed_contractors));
 					
 					?>
 					<section id="project-contractors">
 					<?php
 					if(!empty($project_contractors)) {
-						\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $args['project'], 'occupation'=>$args['occupation'], 'contractor_cat'=>-1, 'contractors' => $project_contractors, 'local_contractors' => $project_local_contractors , 'excludes' => [] ] );
+						\HomeViet\Template_Tags::contractors([ 
+							'texture' => $texture, 
+							'project' => $args['project'], 
+							'occupation'=>$args['occupation'], 
+							'type'=>self::IN_PROJECT, 
+							//'contractors' => array_diff($project_contractors, $removed_contractors),
+							'contractors' => $project_contractors,
+							'local_contractors' => $project_local_contractors, 
+							'removed_contractors' => $removed_contractors, 
+						]);
 					}
 					?>
 					</section>
@@ -160,12 +204,40 @@ class Template_Tags {
 					<section id="project-local-contractors">
 					<?php
 					if(!empty($project_local_contractors)) {
-						\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $args['project'], 'occupation'=>$args['occupation'], 'contractor_cat'=>'', 'contractors'=>[], 'local_contractors' => $project_local_contractors, 'excludes' => $project_contractors ] );
+						\HomeViet\Template_Tags::contractors([ 
+							'texture' => $texture, 
+							'project' => $args['project'], 
+							'occupation'=>$args['occupation'], 
+							'type'=>self::IN_LOCATION, 
+							'contractors' => $project_contractors,
+							'local_contractors' => $project_local_contractors, 
+							'removed_contractors' => $removed_contractors,  
+							// 'local_contractors' => array_diff(
+							// 	$project_local_contractors, 
+							// 	array_unique(array_merge(, $removed_contractors))
+							// ), 
+						]);
 					}
 					?>
 					</section>
 					<?php
 					if(current_user_can( 'edit_contractors' )) {
+						?>
+						<section id="contractors-cat-0">
+						<?php
+						\HomeViet\Template_Tags::contractors([ 
+							'texture' => $texture, 
+							'project' => $args['project'], 
+							'occupation'=>$args['occupation'], 
+							'type'=>self::OUT_PROJECT, 
+							'contractors' => $project_contractors,
+							'local_contractors' => $project_local_contractors, 
+							'removed_contractors' => $removed_contractors,  
+						]);
+						?>
+						</section>
+						<?php
+						/*
 						$contractor_cats = get_terms([
 							'taxonomy' => 'contractor_cat',
 							'hide_empty' => true
@@ -176,22 +248,40 @@ class Template_Tags {
 								?>
 								<section class="contractors-cat" id="contractors-cat-<?=$cat->term_id?>">
 								<?php
-								\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $args['project'], 'occupation'=>$args['occupation'], 'contractor_cat'=>$cat, 'contractors' => [], 'local_contractors' => [], 'excludes' => $excludes ] );
+								\HomeViet\Template_Tags::contractors([
+									'texture' => $texture, 
+									'project' => $args['project'], 
+									'occupation'=>$args['occupation'],
+									'type'=>self::IN_CATEGORY,  
+									'contractor_cat'=>$cat, 
+									'contractors' => [], 
+									'local_contractors' => [], 
+									'excludes' => $excludes 
+								]);
 								?>
 								</section>
 								<?php
 							}
 						}
-
-					
-						?>
-						<section id="contractors-cat-0">
-						<?php
-						\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $args['project'], 'occupation'=>$args['occupation'], 'contractor_cat'=>0, 'contractors' => [], 'local_contractors' => [], 'excludes' => $excludes ] );
-						?>
-						</section>
-						<?php
+						*/
 					}
+					?>
+					<section id="removed-contractors">
+					<?php
+					if(!empty($removed_contractors)) {
+						\HomeViet\Template_Tags::contractors([ 
+							'texture' => $texture, 
+							'project' => $args['project'], 
+							'occupation'=>$args['occupation'], 
+							'type'=>self::IN_REMOVED, 
+							'contractors' => $project_contractors,
+							'local_contractors' => $project_local_contractors, 
+							'removed_contractors' => $removed_contractors,
+						]);
+					}
+					?>
+					</section>
+					<?php
 				} else { // end occupations
 					?>
 					<div class="p-3 text-center text-secondary">Chưa có hạng mục</div>
@@ -223,12 +313,9 @@ class Template_Tags {
 			]
 		];
 
+		$loc = isset($_GET['loc']) ? absint($_GET['loc']) : 0;
 
 		//$default_location = (int) get_option( 'default_term_location', -1 );
-
-		if($args['excludes']) {
-			$query_args['post__not_in'] = $args['excludes'];
-		}
 
 		$tax_query = [
 			'occupation' => [
@@ -238,21 +325,43 @@ class Template_Tags {
 			]
 		];
 
-		if($args['contractor_cat']===0) {
-			$tax_query['contractor_cat'] = [
-				'taxonomy' => 'contractor_cat',
-				'operator' => 'NOT EXISTS'
-			];
-		} else if($args['contractor_cat']===-1) {
-			$query_args['post__in'] = (!empty($args['contractors']))?$args['contractors']:[0];
-		} else if($args['contractor_cat'] instanceof \WP_Term) {
-			$tax_query['contractor_cat'] = [
-				'taxonomy' => 'contractor_cat',
-				'field' => 'term_id',
-				'terms' => [$args['contractor_cat']->term_id]
-			];
-		} else {
-			$query_args['post__in'] = (!empty($args['local_contractors']))?$args['local_contractors']:[0];
+		switch ($args['type']) {
+			case self::OUT_PROJECT:
+				// $tax_query['contractor_cat'] = [
+				// 	'taxonomy' => 'contractor_cat',
+				// 	'operator' => 'NOT EXISTS'
+				// ];
+				if($loc) {
+					$tax_query['location'] = [
+						'taxonomy' => 'location',
+						'field' => 'term_id',
+						'terms' => [$loc]
+					];
+				}
+
+				$query_args['post__not_in'] = array_unique(array_merge($args['contractors'],$args['local_contractors'],$args['removed_contractors']));
+				break;
+			
+			case self::IN_PROJECT:
+				$query_args['post__in'] = (!empty($args['contractors']))?$args['contractors']:[0];
+				//$query_args['post__in'] = (!empty($args['contractors']))?array_diff(array_diff($args['contractors'], $args['local_contractors']),$args['removed_contractors']):[0];
+				break;
+
+			case self::IN_LOCATION:
+				$query_args['post__in'] = (!empty($args['local_contractors']))?$args['local_contractors']:[0];
+				break;
+
+			case self::IN_REMOVED:
+				$query_args['post__in'] = (!empty($args['removed_contractors']))?$args['removed_contractors']:[0];
+				break;
+
+			case self::IN_CATEGORY:
+				// 	$tax_query['contractor_cat'] = [
+				// 		'taxonomy' => 'contractor_cat',
+				// 		'field' => 'term_id',
+				// 		'terms' => [$args['contractor_cat']->term_id]
+				// 	];
+				break;
 		}
 
 		$query_args['tax_query'] = $tax_query;
@@ -265,174 +374,237 @@ class Template_Tags {
 
 		//$contractors = get_posts($query_args);
 
-		if($query->have_posts()) {
+		
 		?>
-		<div class="section-contractors mt-4">
+		<div class="section-contractors mt-4 <?php echo (!$query->have_posts() && $args['type']!==self::OUT_PROJECT)?'hide':''; ?>">
 			<div class="section-contractors-heading fw-bold text-center text-uppercase">
 				<?php
-				if($args['contractor_cat'] instanceof \WP_Term) {
-					echo esc_html($args['contractor_cat']->name);
-				} else if($args['contractor_cat']===0) {
-					echo 'Chưa phân nhóm';
-				} else if($args['contractor_cat']===-1) {
-					echo esc_html(fw_get_db_settings_option('recommend_label', 'Được đề cử'));
-				} else {
-					echo esc_html(fw_get_db_settings_option('recommend_label_local', 'Tại địa phương'));
+				switch ($args['type']) {
+					case self::OUT_PROJECT:
+						// echo 'Chưa phân nhóm';
+						$locations = get_terms([
+							'taxonomy' => 'location',
+							'hide_empty' => false
+						]);
+
+						if($locations) {
+							$current_url = remove_query_arg('loc', fw_current_url());
+							?>
+							<div class="locations d-flex flex-wrap">
+								<a href="<?=esc_url($current_url)?>" class="btn btn-sm btn-<?php echo ($loc==0)?'danger':'primary'; ?> m-1">Tất cả</a>
+								<?php
+								foreach ($locations as $key => $value) {
+									$href = add_query_arg('loc', $value->term_id, $current_url);
+									?>
+									<a href="<?=esc_url($href)?>" class="btn btn-sm btn-<?php echo ($loc==$value->term_id)?'danger':'primary'; ?> m-1"><?=esc_html($value->name)?></a>
+									<?php
+								}
+								?>
+								<button type="button" class="btn btn-sm btn-secondary m-1" data-bs-toggle="modal" data-bs-target="#add-new-location"><span class="dashicons dashicons-plus-alt2"></span> địa điểm</button>
+							</div>
+							<?php
+						}
+						break;
+					
+					case self::IN_PROJECT:
+						echo esc_html(fw_get_db_settings_option('recommend_label', 'Được đề cử'));
+						break;
+
+					case self::IN_LOCATION:
+						echo esc_html(fw_get_db_settings_option('recommend_label_local', 'Tại địa phương'));
+						break;
+
+					case self::IN_REMOVED:
+						echo esc_html(fw_get_db_settings_option('recommend_label_removed', 'Đã loại bỏ'));
+						break;
+
+					case self::IN_CATEGORY:
+						// if($args['contractor_cat'] instanceof \WP_Term) {
+						// 	echo esc_html($args['contractor_cat']->name);
+						// }
+						break;
 				}
 				?>
-					
 			</div>
-			<div class="contractors p-3">
-				<div class="row g-3<?php echo (current_user_can( 'edit_contractors' ))?' contractors-sortable':''; ?> justify-content-center">
-				<?php
-				while ($query->have_posts()) {
-					$query->the_post();
-					global $post;
+			<?php
+			if($query->have_posts()) {
+				?>
+				<div class="contractors p-3">
+					<div class="row g-3<?php echo (current_user_can( 'edit_contractors' ))?' contractors-sortable':''; ?> justify-content-center">
+					<?php
+					while ($query->have_posts()) {
+						$query->the_post();
+						global $post;
 
-					$contractor = \HomeViet\Contractor::get_instance($post->ID);
-					$phone_number = fw_get_db_post_option($post->ID, '_phone_number');
+						$contractor = \HomeViet\Contractor::get_instance($post->ID);
+						$phone_number = fw_get_db_post_option($post->ID, '_phone_number');
 
-					//$cgroups = get_the_terms( $post, 'cgroup' );
-					//$contractor_locations = get_the_terms( $post, 'location' );
+						//$contractor_locations = get_the_terms( $post, 'location' );
 
-					$segments = get_the_terms( $post, 'segment' );
-					$sources = get_the_terms( $post, 'contractor_source' );
-					?>
-					<div class="contractor-item contractor contractor-<?=$post->ID?> <?php
-					if(!empty($args['contractors'])) {
-						echo 'in-project';
-					} else if(!empty($args['local_contractors'])) {
-						echo 'in-local-project';
-					} else {
-						echo 'out-project';
-					}
-					?> col-md-6 col-xl-4 col-xxl-3" data-id="<?=$post->ID?>">
-						<div class="border h-100 bg-white">
-							<div class="thumbnail position-relative border-bottom bg-secondary-subtle">
-								<div class="position-absolute bottom-0 end-0 d-flex z-3 p-1">
-								<?php
-								if(current_user_can( 'edit_contractors' )) {
-									if(empty($args['contractors'])) {
-										if(!in_array($post->ID, $args['excludes'])) {
+						//$occupations = get_the_terms( $post, 'occupation' );
+						$segments = get_the_terms( $post, 'segment' );
+						$sources = get_the_terms( $post, 'contractor_source' );
+
+						?>
+						<div class="contractor-item contractor contractor-<?=$post->ID?><?php
+						if(in_array($post->ID, $args['contractors'])) {
+							echo ' in-project';
+						} else {
+							echo ' out-project';
+						}
+
+						if(in_array($post->ID, $args['local_contractors'])) {
+							echo ' in-local-project';
+						} else {
+							echo ' out-local-project';
+						}
+
+						if(in_array($post->ID, $args['removed_contractors'])) {
+							echo ' in-removed-project';
+						} else {
+							echo ' out-removed-project';
+						}
+
+						?> col-md-6 col-xl-4 col-xxl-3" data-id="<?=$post->ID?>">
+							<div class="border h-100 bg-white">
+								<div class="thumbnail position-relative border-bottom bg-secondary-subtle">
+									<div class="position-absolute bottom-0 end-0 d-flex z-3 p-1">
+									<?php
+									if(current_user_can( 'edit_contractors' )) {
+										if(in_array($post->ID, $args['removed_contractors'])) {
+											?>
+											<button type="button" class="btn btn-sm btn-warning btn-shadow fw-bold ms-2 remove-from-removed" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Sử dụng nhà thầu"><span class="dashicons dashicons-arrow-up-alt"></span></button>
+											<?php
+										} else {
+
+											?>
+											<button type="button" class="btn btn-sm btn-warning btn-shadow fw-bold ms-2 add-to-removed" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Loại bỏ nhà thầu"><span class="dashicons dashicons-arrow-down-alt"></span></button>
+											<?php
+										}
+
+										if(in_array($post->ID, $args['contractors'])) {
+											?>
+											<button type="button" class="btn btn-sm btn-danger btn-shadow fw-bold ms-2 remove-from-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Loại khỏi dự án"><span class="dashicons dashicons-minus"></span></button>
+											<?php
+										} else {
 											?>
 											<button type="button" class="btn btn-sm btn-danger btn-shadow fw-bold ms-2 add-to-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Đề cử cho dự án"><span class="dashicons dashicons-plus-alt2"></span></button>
 											<?php
 										}
-									} else {
-									?>
-									<button type="button" class="btn btn-sm btn-danger btn-shadow fw-bold ms-2 remove-from-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Loại khỏi dự án"><span class="dashicons dashicons-minus"></span></button>
-									<?php
-									}
-
-									if(empty($args['contractors'])) {
-										if(empty($args['local_contractors'])) {
-										?>
-										<button type="button" class="btn btn-sm btn-primary btn-shadow fw-bold ms-2 add-to-local-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Thêm vào địa phương dự án"><span class="dashicons dashicons-location"></span></button>
-										<?php
+										
+										if(in_array($post->ID, $args['local_contractors'])) {
+											?>
+											<button type="button" class="btn btn-sm btn-primary btn-shadow fw-bold ms-2 remove-from-local-project position-relative" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Loại khỏi địa phương dự án">
+												<span class="position-absolute top-50 start-50 translate-middle dashicons dashicons-location"></span>
+												<span class="position-absolute d-block icon-minus"></span>
+											</button>
+											<?php
 										} else {
+											?>
+											<button type="button" class="btn btn-sm btn-primary btn-shadow fw-bold ms-2 add-to-local-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Thêm vào địa phương dự án"><span class="dashicons dashicons-location"></span></button>
+											<?php
+										}
+									
 										?>
-										<button type="button" class="btn btn-sm btn-primary btn-shadow fw-bold ms-2 remove-from-local-project position-relative" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Loại khỏi địa phương dự án">
-											<span class="position-absolute top-50 start-50 translate-middle dashicons dashicons-location"></span>
-											<span class="position-absolute d-block icon-minus"></span>
-										</button>
+										
+										<a class="btn btn-sm btn-primary btn-shadow fw-bold ms-2" href="<?php echo get_edit_post_link( $post ); ?>" target="_blank"><span class="dashicons dashicons-edit-page"></span></a>
+										
+										<a href="#edit-contractor" class="btn btn-sm btn-danger btn-shadow fw-bold ms-2" data-bs-toggle="modal" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" data-contractor-title="<?php echo esc_attr($post->post_title); ?>" title="Sửa nhanh"><span class="dashicons dashicons-edit"></span></a>
 										<?php
-										}
-									} else {
-										if(!in_array($post->ID, $args['local_contractors'])) {
-										?>
-										<button type="button" class="btn btn-sm btn-primary btn-shadow fw-bold ms-2 add-to-local-project" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" title="Thêm vào địa phương dự án"><span class="dashicons dashicons-location"></span></button>
-										<?php
-										}
-									}
-									?>
-									
-									<a class="btn btn-sm btn-primary btn-shadow fw-bold ms-2" href="<?php echo get_edit_post_link( $post ); ?>" target="_blank"><span class="dashicons dashicons-edit-page"></span></a>
-									
-									<a href="#edit-contractor" class="btn btn-sm btn-danger btn-shadow fw-bold ms-2" data-bs-toggle="modal" data-texture="<?=(($args['texture'])?$args['texture']->id:0)?>" data-project="<?=$args['project']->id?>" data-contractor="<?=$post->ID?>" data-contractor-title="<?php echo esc_attr($post->post_title); ?>" title="Sửa nhanh"><span class="dashicons dashicons-edit"></span></a>
-									<?php
-								}
-								?>
-								</div>
-								<div class="position-absolute top-0 start-0 d-flex z-3">
-									<?php
-									/*
-									if(!empty($cgroups)) {
-										echo '<div class="cgroups d-flex">';
-										foreach ($cgroups as $cg) {
-											?>
-											<span class="m-1 btn btn-sm btn-<?=esc_attr($cg->description)?> btn-shadow"><?=esc_html($cg->name)?></span>
-											<?php
-										}
-										echo '</div>';
-									}
-									
-									if(!empty($contractor_locations)) {
-										echo '<div class="locations d-flex">';
-										foreach ($contractor_locations as $loc) {
-											?>
-											<span class="m-1 btn btn-sm btn-primary btn-shadow"><?=esc_html($loc->name)?></span>
-											<?php
-										}
-										echo '</div>';
-									}
-									*/
-									?>
-								</div>
-								<?php if(current_user_can('edit_contractors')) { ?>
-								<div class="position-absolute top-0 end-0 d-flex z-3">
-									<div class="segments d-flex">
-									<?php
-									if(!empty($segments)) {
-										foreach ($segments as $seg) {
-											?>
-											<span class="m-1 btn btn-sm btn-danger btn-shadow"><?=esc_html($seg->name)?></span>
-											<?php
-										}
 									}
 									?>
 									</div>
-								</div>
-								<div class="position-absolute bottom-0 start-0 d-flex z-3">
-									<div class="sources d-flex">
-									<?php
-									if(!empty($sources)) {
-										foreach ($sources as $s) {
-											?>
-											<span class="m-1 btn btn-sm btn-success btn-shadow"><?=esc_html($s->name)?></span>
-											<?php
+									<div class="position-absolute top-0 start-0 d-flex z-3">
+										<?php
+										/*
+										if(!empty($cgroups)) {
+											echo '<div class="cgroups d-flex">';
+											foreach ($cgroups as $cg) {
+												?>
+												<span class="m-1 btn btn-sm btn-<?=esc_attr($cg->description)?> btn-shadow"><?=esc_html($cg->name)?></span>
+												<?php
+											}
+											echo '</div>';
 										}
-									}
-									?>
+										
+										if(!empty($contractor_locations)) {
+											echo '<div class="locations d-flex">';
+											foreach ($contractor_locations as $loc) {
+												?>
+												<span class="m-1 btn btn-sm btn-primary btn-shadow"><?=esc_html($loc->name)?></span>
+												<?php
+											}
+											echo '</div>';
+										}
+										*/
+										?>
 									</div>
-								</div>
-								<?php } ?>
-								<div class="ratio ratio-4x3">
-									<div><?php echo $contractor->get_image('medium_large'); ?></div>
-								</div>
-								
-							</div>
-							<div class="info py-3 px-1">
-								<h3 class="text-center text-uppercase fs-6 m-0 fw-bold"><?php echo esc_html($post->post_title); ?></h3>
-								<div class="btn-contacts d-flex p-2 justify-content-center">
-									<?php if($phone_number) { ?>
-									<div class="bg-success text-white py-1 px-2 m-1 rounded"><?php echo esc_html($phone_number); ?></div>
-									<a class="bg-danger text-white py-1 px-2 m-1 rounded" href="tel:<?php echo esc_attr($phone_number); ?>">Gọi điện</a>
-									<a class="bg-primary text-white py-1 px-2 m-1 rounded" href="https://zalo.me/<?php echo esc_attr($phone_number); ?>">Nhắn Zalo</a>
+									<?php if(current_user_can('edit_contractors')) { ?>
+									<div class="position-absolute top-0 end-0 d-flex z-3">
+										<div class="segments d-flex">
+										<?php
+										if(!empty($segments)) {
+											foreach ($segments as $seg) {
+												?>
+												<span class="m-1 btn btn-sm btn-danger btn-shadow"><?=esc_html($seg->name)?></span>
+												<?php
+											}
+										}
+										?>
+										</div>
+									</div>
+									<div class="position-absolute top-0 start-0 d-flex z-3">
+										<div class="sources d-flex">
+										<?php
+										if(!empty($sources)) {
+											foreach ($sources as $s) {
+												?>
+												<span class="m-1 btn btn-sm btn-success btn-shadow"><?=esc_html($s->name)?></span>
+												<?php
+											}
+										}
+										?>
+										</div>
+									</div>
 									<?php } ?>
+									<div class="ratio ratio-4x3">
+										<div><?php echo $contractor->get_image('medium_large'); ?></div>
+									</div>
+									
 								</div>
-								<div class="desc"><?php the_content(); ?></div>
+								<div class="info py-3 px-1">
+									<h3 class="text-center text-uppercase fs-6 m-0 fw-bold">
+										<span><?php echo esc_html($args['occupation']->term->name); ?></span>
+										&nbsp;-&nbsp;
+										<span><?php echo esc_html($post->post_title); ?></span>
+									</h3>
+									<div class="btn-contacts d-flex p-2 justify-content-center">
+										<?php if($phone_number) { ?>
+										<div class="bg-success text-white py-1 px-2 m-1 rounded"><?php echo esc_html($phone_number); ?></div>
+										<a class="bg-danger text-white py-1 px-2 m-1 rounded" href="tel:<?php echo esc_attr($phone_number); ?>">Gọi điện</a>
+										<a class="bg-primary text-white py-1 px-2 m-1 rounded" href="https://zalo.me/<?php echo esc_attr($phone_number); ?>">Nhắn Zalo</a>
+										<?php } ?>
+									</div>
+									<div class="desc text-center"><?php the_content(); ?></div>
+								</div>
 							</div>
 						</div>
+						<?php
+					}
+					?>
 					</div>
-					<?php
-				}
-				?>
 				</div>
-			</div>
+				<?php
+				wp_reset_postdata();
+			} else {
+				?>
+				<div class="text-center mt-3 text-secondary">Không có</div>
+				<?php
+			}
+			?>
 		</div>
 		<?php
-		wp_reset_postdata();
-		}
+		
 	}
 
 	public static function extract_template_args($slug, $name, $args) {
@@ -643,13 +815,137 @@ class Template_Tags {
 		</div>
 
 		<div class="modal fade" id="edit-contractor" tabindex="-1" role="dialog" aria-labelledby="edit-contractor-label">
-			<div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-dialog modal-lg modal-dialog-scrollable">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" id="edit-contractor-label">Sửa nhà thầu</h5>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="add-new-location" tabindex="-1" role="dialog" aria-labelledby="add-new-location-label">
+			<div class="modal-dialog modal-md modal-dialog-scrollable">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="add-new-location-label">Tạo hạng mục</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form id="frm-add-new-location" method="POST" action="">
+							<?php wp_nonce_field( 'add-new-location', 'nonce' ); ?>
+							<div id="add-new-location-response"></div>
+							<div class="mb-3">
+								Tiêu đề
+								<input type="text" class="form-control" name="location_name" required>
+							</div>
+							<div class="mb-3">
+								<button type="submit" class="btn btn-danger text-uppercase fw-bold text-yellow text-nowrap d-block w-100">Tạo</button>
+							</div>
+							
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="add-new-occupation" tabindex="-1" role="dialog" aria-labelledby="add-new-occupation-label">
+			<div class="modal-dialog modal-md modal-dialog-scrollable">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="add-new-occupation-label">Tạo hạng mục</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form id="frm-add-new-occupation" method="POST" action="">
+							<?php wp_nonce_field( 'add-new-occupation', 'nonce' ); ?>
+							<div id="add-new-occupation-response"></div>
+							<div class="mb-3">
+								Tiêu đề
+								<input type="text" class="form-control" name="occupation_name" required>
+							</div>
+							<div class="mb-3">
+								<button type="submit" class="btn btn-danger text-uppercase fw-bold text-yellow text-nowrap d-block w-100">Tạo</button>
+							</div>
+							
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+		global $occupation;	
+		?>
+		<div class="modal fade" id="add-new-contractor" tabindex="-1" role="dialog" aria-labelledby="add-new-contractor-label">
+			<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="add-new-contractor-label" required>Tạo nhà thầu</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form id="frm-add-new-contractor" method="POST" action="">
+							<?php wp_nonce_field( 'add-new-contractor', 'nonce' ); ?>
+							<input type="hidden" name="contractor_occupation" value="<?=absint(($occupation)?$occupation->id:0)?>">
+							<div id="add-new-contractor-response"></div>
+							<div class="row">
+								<div class="col-lg-6">
+									<div class="mb-3">
+										Tiêu đề
+										<input type="text" class="form-control" name="contractor_title">
+									</div>
+									<div class="mb-3">
+										Số điện thoại
+										<input type="text" class="form-control" name="contractor_phone_number">
+									</div>
+									<div class="mb-3">
+										Nguồn nhà thầu
+										<div>
+										<?php
+										wp_dropdown_categories([
+											'taxonomy' => 'contractor_source',
+											'name' => 'contractor_source',
+											'id' => 'contractor_source-selection',
+											'class' => 'select2-hidden-accessible w-100',
+											'hide_empty' => false,
+											'hierarchical' => true,
+											'show_option_all'   => '--Không có--',
+										]);
+										?>
+										</div>
+									</div>
+									<div class="mb-3">
+										Địa điểm
+										<div>
+										<?php
+										wp_dropdown_categories([
+											'taxonomy' => 'location',
+											'name' => 'location',
+											'id' => 'location-selection',
+											'class' => 'select2-hidden-accessible',
+											'hide_empty' => false,
+											'hierarchical' => true,
+											'show_option_all'   => '--Không có--',
+										]);
+										?>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="mb-3">
+										Mô tả thêm
+										<textarea class="form-control" rows="11" name="contractor_description"></textarea>
+									</div>
+								</div>
+							</div>
+							<div class="mb-3">
+								<button type="submit" class="btn btn-danger text-uppercase fw-bold text-yellow text-nowrap d-block w-100">Tạo</button>
+							</div>
+							
+						</form>
+					</div>
 				</div>
 			</div>
 		</div>

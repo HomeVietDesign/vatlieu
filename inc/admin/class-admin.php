@@ -11,12 +11,12 @@ class Main {
 		$this->hooks_contractor();
 		$this->hooks_design_cat();
 		$this->hooks_occupation();
-		//$this->hooks_location();
+		$this->hooks_location();
 		$this->hooks_segment();
 		$this->hooks_design_exterior();
 		$this->hooks_design_interior();
 		$this->hooks_project();
-		$this->hooks_cgroup();
+		//$this->hooks_cgroup();
 		$this->hooks_contractor_cat();
 		$this->hooks_contractor_source();
 		//$this->hooks_texture_upload();
@@ -185,7 +185,7 @@ class Main {
 		include_once THEME_DIR.'/inc/admin/class-admin-location.php';
 		include_once THEME_DIR.'/inc/admin/class-admin-segment.php';
 		include_once THEME_DIR.'/inc/admin/class-admin-project.php';
-		include_once THEME_DIR.'/inc/admin/class-admin-cgroup.php';
+		//include_once THEME_DIR.'/inc/admin/class-admin-cgroup.php';
 		include_once THEME_DIR.'/inc/admin/class-admin-contractor_cat.php';
 		include_once THEME_DIR.'/inc/admin/class-admin-contractor_source.php';
 

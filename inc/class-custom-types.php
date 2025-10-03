@@ -41,9 +41,13 @@ class Custom_Types {
 			'design_cat',
 			//'design_interior',
 			//'design_exterior',
-			'project'
+			'project',
 		];
 		if( in_array($taxonomy_name, $taxs) && $post_type=='texture') {
+			$show_in_quick_edit = false;
+		}
+
+		if( in_array($taxonomy_name, ['contractor_cat', 'segment']) && $post_type=='contractor') {
 			$show_in_quick_edit = false;
 		}
 
@@ -293,7 +297,8 @@ class Custom_Types {
 			'show_in_nav_menus' => false,
 			'show_tagcloud' 	=> false,
 		);
-		register_taxonomy( 'cgroup', ['contractor'], $args ); // tạm thời không sử dụng
+		//register_taxonomy( 'cgroup', ['contractor'], $args ); // tạm thời không sử dụng
+
 
 		// Add new taxonomy, make it hierarchical (like categories)
 		$labels = array(
@@ -312,7 +317,7 @@ class Custom_Types {
 			'hierarchical'      => true,
 			'labels'            => $labels,
 			'show_ui'           => true,
-			'show_admin_column' => true,
+			'show_admin_column' => false,
 			'query_var'         => true,
 			//'rewrite'           => ['slug'=>'hang-muc'],
 			//'rewrite'           => false,
@@ -405,7 +410,7 @@ class Custom_Types {
 		$default = (int) get_option( 'default_term_location', -1 );
 		$args['default_term'] = ($default>0)?$default:$default_location;
 
-		register_taxonomy( 'location', ['post'], $args );
+		register_taxonomy( 'location', ['contractor'], $args );
 		
 
 		// Add new taxonomy, make it hierarchical (like categories)
@@ -575,7 +580,7 @@ class Custom_Types {
 
 		add_menu_page( 'Dự án', 'Dự án', 'manage_projects', 'edit-tags.php?taxonomy=project', null, 'dashicons-bank', 4 );
 		add_menu_page( 'Hạng mục', 'Hạng mục', 'manage_occupations', 'edit-tags.php?taxonomy=occupation', null, 'dashicons-category', 4 );
-		//add_menu_page( 'Địa điểm', 'Địa điểm', 'manage_locations', 'edit-tags.php?taxonomy=location', null, 'dashicons-location', 5 );
+		add_menu_page( 'Địa điểm', 'Địa điểm', 'manage_locations', 'edit-tags.php?taxonomy=location', null, 'dashicons-location', 5 );
 		add_menu_page( 'Phân khúc', 'Phân khúc', 'manage_segments', 'edit-tags.php?taxonomy=segment', null, 'dashicons-money-alt', 5 );
 	}
 
@@ -593,7 +598,7 @@ class Custom_Types {
 		$taxonomies = [
 			'project',
 			'occupation',
-			//'location',
+			'location',
 			'segment'
 		];
 

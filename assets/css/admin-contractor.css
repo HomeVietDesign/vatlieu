@@ -9,3 +9,14 @@
 #newcgroup_parent {
 	display: none;
 }
+#wpbody-content .inline-edit-row-post .inline-edit-col-center {
+	width: 60%;
+}
+#wpbody-content .inline-edit-row-post .inline-edit-col-center .inline-edit-col {
+	display: flex;
+	flex-wrap: wrap;
+}
+#wpbody-content .inline-edit-row-post .inline-edit-col-center .inline-edit-col .quick-tax-wrap {
+	width: 200px;
+	margin: 0 5px 5px 5px;
+}

@@ -51,6 +51,12 @@ $options = array(
 				'type'  => 'text',
 				'value' => 'Tại địa phương'
 			),
+			'recommend_label_removed' => array(
+				'label' => 'Nhãn nhóm nhà thầu bị loại bỏ',
+				'desc'  => '',
+				'type'  => 'text',
+				'value' => 'Đã loại bỏ'
+			),
 			'cf_turnstile_key' => array(
 				'label' => __( 'Turnstile key' ),
 				'type'  => 'text',

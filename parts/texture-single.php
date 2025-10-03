@@ -1,5 +1,5 @@
 <?php
-global $post, $texture;
+global $post, $texture, $occupation;
 
 $projects = get_the_terms( $post, 'project' ); // Dự án
 $occupations = get_the_terms( $post, 'occupation' ); // hạng mục
@@ -24,8 +24,10 @@ if($occupations) {
 }
 
 if($design_cats) {
-	$design_cat = \HomeViet\Occupation::get_instance($design_cats[0]);
+	$design_cat = \HomeViet\Design_Cat::get_instance($design_cats[0]);
 }
+
+
 ?>
 <article id="texture-<?php echo $texture->get_id(); ?>">
 	<div class="container-fluid">

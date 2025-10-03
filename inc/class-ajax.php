@@ -3,6 +3,212 @@ namespace HomeViet;
 
 class Ajax {
 
+	public static function add_to_removed() {
+		$response = [
+			'code' => 0,
+			'msg' => '',
+			'data' => [],
+			'html' => ''
+		];
+
+		if((current_user_can('edit_contractors')) && check_ajax_referer( 'global', 'nonce', false )) {
+			$texture = isset($_POST['texture'])?absint($_POST['texture']):0;
+			$project = isset($_POST['project'])?absint($_POST['project']):0;
+			$contractor = isset($_POST['contractor'])?absint($_POST['contractor']):0;
+
+			$texture_obj = \HomeViet\Texture::get_instance($texture);
+
+			$project_obj = Project::get_instance(get_term_by('term_id', $project, 'project'));
+			$project_obj->remove_contractor($contractor);
+			$project_obj->remove_local_contractor($contractor);
+			Template_Tags::add_to_removed_contractors($contractor);
+
+			$response['code'] = 200;
+			$response['msg'] = 'OK';
+			$response['data'] = [
+				'texture' => $texture,
+				'project' => $project,
+				'contractor' => $contractor,
+			];
+
+			$response['html'] = self::get_project_contractors($texture_obj, $project_obj, $contractor);
+
+		} else {
+			$response['code'] = 403;
+			$response['msg'] = 'Forbiden.';
+		}
+
+		wp_send_json( $response );
+	}
+
+	public static function remove_from_removed() {
+		$response = [
+			'code' => 0,
+			'msg' => '',
+			'data' => [],
+			'html' => ''
+		];
+
+		if((current_user_can('edit_contractors')) && check_ajax_referer( 'global', 'nonce', false )) {
+			$texture = isset($_POST['texture'])?absint($_POST['texture']):0;
+			$project = isset($_POST['project'])?absint($_POST['project']):0;
+			$contractor = isset($_POST['contractor'])?absint($_POST['contractor']):0;
+
+			$texture_obj = \HomeViet\Texture::get_instance($texture);
+			
+			$project_obj = Project::get_instance(get_term_by('term_id', $project, 'project'));
+			Template_Tags::remove_from_removed_contractors($contractor);
+
+			$response['code'] = 200;
+			$response['msg'] = 'OK';
+			$response['data'] = [
+				'texture' => $texture,
+				'project' => $project,
+				'contractor' => $contractor,
+			];
+
+			$response['html'] = self::get_project_contractors($texture_obj, $project_obj, $contractor);
+			
+		} else {
+			$response['code'] = 403;
+			$response['msg'] = 'Forbiden.';
+		}
+
+		wp_send_json( $response );
+	}
+
+	public static function add_new_location() {
+		$response = [
+			'code' => 0,
+			'msg' => '',
+			'data' => []
+		];
+
+		if((current_user_can('manage_locations')) && check_ajax_referer( 'add-new-location', 'nonce', false )) {
+			$location_name = isset($_POST['location_name'])?sanitize_text_field($_POST['location_name']):'';
+			
+			if($location_name!='') {
+				$insert = wp_insert_term( $location_name, 'location' );
+				if($insert instanceof \WP_Error) {
+					$response['code'] = 406;
+					$response['msg'] = '<p class="text-danger">'.esc_html($insert->get_error_message()).'</p>';
+				} else {
+					if(function_exists('customtaxorder_set_db_term_order')) {
+						//debug_log($insert);
+						customtaxorder_set_db_term_order( $insert['term_id'], 99, 'location' );
+					}
+					$response['code'] = 200;
+					$response['msg'] = '<p class="text-success">Đã tạo</p>';
+				}
+			}
+
+		} else {
+			$response['code'] = 403;
+			$response['msg'] = '<p class="text-danger">Không đủ quyền hạn.</p>';
+		}
+
+		wp_send_json( $response );
+	}
+
+	public static function add_new_contractor() {
+		global $wpdb;
+
+		$response = [
+			'code' => 0,
+			'msg' => '',
+			'data' => []
+		];
+
+		if((current_user_can('edit_contractors')) && check_ajax_referer( 'add-new-contractor', 'nonce', false )) {
+			$contractor_title = isset($_POST['contractor_title'])?sanitize_text_field($_POST['contractor_title']):'';
+			
+			
+			if($contractor_title!='') {
+				$contractor_description = isset($_POST['contractor_description'])?sanitize_textarea_field($_POST['contractor_description']):'';
+				$contractor_phone_number = isset($_POST['contractor_phone_number'])?sanitize_textarea_field($_POST['contractor_phone_number']):'';
+				$contractor_occupation = isset($_POST['contractor_occupation'])?absint($_POST['contractor_occupation']):0;
+				$contractor_source = isset($_POST['contractor_source'])?absint($_POST['contractor_source']):0;
+				$location = isset($_POST['location'])?absint($_POST['location']):0;
+
+				if( $contractor_phone_number!='' && \HomeViet\Admin\Contractor::contractor_exists($contractor_phone_number) ) {
+					$response['code'] = 406;
+					$response['msg'] = '<p class="text-danger">Số điện thoại đã tồn tại.</p>';
+				} else {
+					$insert = wp_insert_post( [
+						'post_type' => 'contractor',
+						'post_title' => $contractor_title,
+						'post_content' => $contractor_description,
+						'post_status' => 'publish'
+					], true );
+
+					if($insert instanceof \WP_Error) {
+						$response['code'] = 406;
+						$response['msg'] = '<p class="text-danger">'.esc_html($insert->get_error_message()).'</p>';
+					} else if(is_int($insert)) {
+						
+						fw_set_db_post_option($insert, '_phone_number', $contractor_phone_number);
+						update_post_meta( $insert, '_phone_number', $contractor_phone_number );
+
+						$wpdb->update( $wpdb->posts, ['post_excerpt' => phone_8420($contractor_phone_number).' '.phone_0284($contractor_phone_number),'post_name' => 'c'.$insert], ['ID' => $insert] );
+
+						if($contractor_occupation) {
+							wp_set_object_terms( $insert, $contractor_occupation, 'occupation', false );
+						}
+
+						if($contractor_source) {
+							wp_set_object_terms( $insert, $contractor_source, 'contractor_source', false );
+						}
+						
+						if($location) {
+							wp_set_object_terms( $insert, $location, 'location', false );
+						}
+
+						$response['code'] = 200;
+						$response['msg'] = '<p class="text-success">Đã tạo</p>';
+					}
+				}
+			} else {
+				$response['code'] = 406;
+				$response['msg'] = '<p class="text-danger">Phải có tiêu đề</p>';
+			}
+
+		} else {
+			$response['code'] = 403;
+			$response['msg'] = '<p class="text-danger">Không đủ quyền hạn.</p>';
+		}
+
+		wp_send_json( $response );
+	}
+
+	public static function add_new_occupation() {
+		$response = [
+			'code' => 0,
+			'msg' => '',
+			'data' => []
+		];
+
+		if((current_user_can('manage_occupations')) && check_ajax_referer( 'add-new-occupation', 'nonce', false )) {
+			$occupation_name = isset($_POST['occupation_name'])?sanitize_text_field($_POST['occupation_name']):'';
+			
+			if($occupation_name!='') {
+				$insert = wp_insert_term( $occupation_name, 'occupation' );
+				if($insert instanceof \WP_Error) {
+					$response['code'] = 406;
+					$response['msg'] = '<p class="text-danger">'.esc_html($insert->get_error_message()).'</p>';
+				} else {
+					$response['code'] = 200;
+					$response['msg'] = '<p class="text-success">Đã tạo</p>';
+				}
+			}
+
+		} else {
+			$response['code'] = 403;
+			$response['msg'] = '<p class="text-danger">Không đủ quyền hạn.</p>';
+		}
+
+		wp_send_json( $response );
+	}
+
 	public static function get_project_contractors($texture, $project, $contractor=0) {
 		$occupation = null;
 		$occupations = get_the_terms( $texture->post, 'occupation' ); // hạng mục
@@ -10,52 +216,99 @@ class Ajax {
 			$occupation = \HomeViet\Occupation::get_instance($occupations[0]);
 		}
 
-		if($contractor>0) {
-			$contractor_cats = get_the_terms( $contractor, 'contractor_cat' ); // phân nhóm
-		} else {
-			$contractor_cats = get_terms([
-				'taxonomy'=>'contractor_cat',
-				'hide_empty' => true
-			]); // phân nhóm
-		}
+		// if($contractor>0) {
+		// 	$contractor_cats = get_the_terms( $contractor, 'contractor_cat' ); // phân nhóm
+		// } else {
+		// 	$contractor_cats = get_terms([
+		// 		'taxonomy'=>'contractor_cat',
+		// 		'hide_empty' => true
+		// 	]); // phân nhóm
+		// }
+
+		$removed_contractors = Template_Tags::get_removed_contractors();
 		
 		//debug_log($contractor_cats);
-
-		$excludes = array_merge($project->get_contractors(), $project->get_local_contractors());
 
 		$return = [
 			'html' => '',
 			'html_local' => '',
 			'html_cats' => [],
+			'html_removed' => '',
 		];
 
 		ob_start();
 		
-		\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $project, 'occupation'=>$occupation, 'contractor_cat'=>-1, 'contractors' => $project->get_contractors(), 'local_contractors' => $project->get_local_contractors(), 'excludes' => [] ] );
+		\HomeViet\Template_Tags::contractors([
+			'texture' => $texture, 
+			'project' => $project, 
+			'occupation'=>$occupation, 
+			'type'=>Template_Tags::IN_PROJECT,
+			'contractors' => $project->get_contractors(), 
+			'local_contractors' => $project->get_local_contractors(), 
+			'removed_contractors' => $removed_contractors, 
+		]);
 
 		$return['html'] = ob_get_clean();
 
 		ob_start();
 			
-		\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $project, 'occupation'=>$occupation, 'contractor_cat'=>'', 'contractors'=>[], 'local_contractors' => $project->get_local_contractors(), 'excludes' => $project->get_contractors() ] );
+		\HomeViet\Template_Tags::contractors([ 
+			'texture' => $texture, 
+			'project' => $project, 
+			'occupation'=>$occupation, 
+			'type'=>Template_Tags::IN_LOCATION,
+			'contractors' => $project->get_contractors(), 
+			'local_contractors' => $project->get_local_contractors(), 
+			'removed_contractors' => $removed_contractors, 
+		]);
 
 		$return['html_local'] = ob_get_clean();
 
-		if($contractor_cats) {
-			foreach ($contractor_cats as $key => $value) {
-				ob_start();
+		// if($contractor_cats) {
+		// 	foreach ($contractor_cats as $key => $value) {
+		// 		ob_start();
 		
-				\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $project, 'occupation'=>$occupation, 'contractor_cat'=>$value, 'contractors' => [], 'local_contractors' => [], 'excludes' => $excludes ] );
+		// 		\HomeViet\Template_Tags::contractors([ 
+		// 			'texture' => $texture, 
+		// 			'project' => $project, 
+		// 			'occupation'=>$occupation, 
+		// 			'contractor_cat'=>$value, 
+		// 			'contractors' => $project->get_contractors(), 
+		// 			'local_contractors' => $project->get_local_contractors(), 
+		// 			'removed_contractors' => $removed_contractors, 
+		// 		]);
 
-				$return['html_cats']['contractors-cat-'.$value->term_id] = ob_get_clean();
-			}
-		} else {
+		// 		$return['html_cats']['contractors-cat-'.$value->term_id] = ob_get_clean();
+		// 	}
+		// } else {
 			ob_start();
 		
-			\HomeViet\Template_Tags::contractors( [ 'texture' => $texture, 'project' => $project, 'occupation'=>$occupation, 'contractor_cat'=>0, 'contractors' => [], 'contractors' => [], 'excludes' => $excludes ] );
+			\HomeViet\Template_Tags::contractors([ 
+				'texture' => $texture, 
+				'project' => $project, 
+				'occupation'=>$occupation, 
+				'type'=>Template_Tags::OUT_PROJECT,
+				'contractors' => $project->get_contractors(), 
+				'local_contractors' => $project->get_local_contractors(), 
+				'removed_contractors' => $removed_contractors, 
+			]);
 
 			$return['html_cats']['contractors-cat-0'] = ob_get_clean();
-		}
+		//}
+
+		ob_start();
+			
+		\HomeViet\Template_Tags::contractors([ 
+			'texture' => $texture, 
+			'project' => $project, 
+			'occupation'=>$occupation, 
+			'type'=>Template_Tags::IN_REMOVED,
+			'contractors' => $project->get_contractors(), 
+			'local_contractors' => $project->get_local_contractors(), 
+			'removed_contractors' => $removed_contractors, 
+		]);
+
+		$return['html_removed'] = ob_get_clean();
 
 		return $return;
 	}
@@ -76,6 +329,8 @@ class Ajax {
 			$texture_obj = \HomeViet\Texture::get_instance($texture);
 
 			$project_obj = Project::get_instance(get_term_by('term_id', $project, 'project'));
+			$project_obj->remove_contractor($contractor);
+			Template_Tags::remove_from_removed_contractors($contractor);
 			$project_obj->add_local_contractor($contractor);
 
 			$response['code'] = 200;
@@ -148,6 +403,8 @@ class Ajax {
 			$texture_obj = \HomeViet\Texture::get_instance($texture);
 
 			$project_obj = Project::get_instance(get_term_by('term_id', $project, 'project'));
+			$project_obj->remove_local_contractor($contractor);
+			Template_Tags::remove_from_removed_contractors($contractor);
 			$project_obj->add_contractor($contractor);
 
 			$response['code'] = 200;
@@ -309,19 +566,14 @@ class Ajax {
 		];
 
 		if((current_user_can('edit_contractors')) && check_ajax_referer( 'edit-contractor', 'nonce', false )) {
-			$texture = isset($_POST['texture'])?absint($_POST['texture']):0;
-			$project = isset($_POST['project'])?absint($_POST['project']):0;
 			$contractor = isset($_POST['contractor'])?absint($_POST['contractor']):0;
 
-			if($texture && $project && $contractor) {
-				
-				if(isset($_POST['add_to_project'])) {
-					$project_contractors = fw_get_db_term_option($project, 'project', 'contractors', []);
-					if(!in_array($contractor, $project_contractors)) {
-						$project_contractors[] = $contractor;
-						fw_set_db_term_option($project, 'project', 'contractors', $project_contractors);
-					}
-				}
+			if($contractor) {
+				$contractor_title = isset($_POST['contractor_title'])?sanitize_text_field($_POST['contractor_title']):0;
+				$contractor_location = isset($_POST['contractor_location'])?array_map('absint',$_POST['contractor_location']):[];
+
+				wp_update_post(['ID'=>$contractor, 'post_title'=>$contractor_title]);
+				wp_set_object_terms( $contractor, $contractor_location, 'location', false );
 
 				$response['code'] = 200;
 				$response['msg'] = '<p class="text-success">Đã lưu</p>';
@@ -349,61 +601,64 @@ class Ajax {
 	}
 
 	public static function get_edit_contractor_form() {
-		$texture = isset($_GET['texture'])?absint($_GET['texture']):0;
-		$project = isset($_GET['project'])?absint($_GET['project']):0;
+		// $texture = isset($_GET['texture'])?absint($_GET['texture']):0;
+		// $project = isset($_GET['project'])?absint($_GET['project']):0;
 		$contractor = isset($_GET['contractor'])?absint($_GET['contractor']):0;
 
-		if($contractor && $texture && $project) {
-			// $cgroups = get_the_terms( $contractor, 'cgroup' );
-			// if(!empty($cgroups)) {
-			// 	$cgroups = array_map(function($t){
-			// 		return $t->term_id;
-			// 	}, $cgroups);
-			// } else {
-			// 	$cgroups = [];
-			// }
-			// $_cgroups = get_terms([
-			// 	'taxonomy' => 'cgroup',
-			// 	'hide_empty' => false
-			// ]);
+		if($contractor) {
+			$locations = get_the_terms( $contractor, 'location' );
+			if(!empty($locations)) {
+				$locations = array_map(function($t){
+					return $t->term_id;
+				}, $locations);
+			} else {
+				$locations = [];
+			}
+
+			//debug($locations);
+
+			$_locations = get_terms([
+				'taxonomy' => 'location',
+				'hide_empty' => false
+			]);
+
 			?>
 			<form id="frm-edit-contractor" method="POST" action="">
-				<input type="hidden" name="texture" value="<?=$texture?>">
-				<input type="hidden" name="project" value="<?=$project?>">
 				<input type="hidden" name="contractor" value="<?=$contractor?>">
 				<?php wp_nonce_field( 'edit-contractor', 'nonce' ); ?>
 				<div id="edit-contractor-response"></div>
 				<div class="mb-3">
-					<!-- <div class="form-check">
-						<input class="form-check-input" type="checkbox" name="add_to_project" value="on" id="add-to-project">
-						<label class="form-check-label" for="add-to-project">Đề cử cho dự án</label>
-					</div> -->
-				<?php
-					// wp_dropdown_categories([
-					// 	'taxonomy' => 'cgroup',
-					// 	'name' => 'cgroup',
-					// 	'id' => 'cgroup-selection',
-					// 	'class' => 'select2-hidden-accessible',
-					// 	'hide_empty' => false,
-					// 	'selected' => (!empty($cgroups))?$cgroups[0]->term_id:0,
-					// 	'hierarchical' => true,
-					// 	'show_option_all'   => '--Phân nhóm--',
-					// ]);
-					/*
-					if(!empty($_cgroups)) {
-						foreach ($_cgroups as $key => $value) {
-							?>
-							<div class="form-check-wrap">
-								<div class="form-check">
-									<input class="form-check-input cgroup-check-input" type="checkbox" name="cgroups[]" value="<?=$value->term_id?>" id="check-cgroup-<?=$value->term_id?>" <?php checked( in_array($value->term_id, $cgroups), true ); ?>>
-									<label class="form-check-label" for="check-cgroup-<?=$value->term_id?>"><?=esc_html($value->name)?></label>
-								</div>
-							</div>
-							<?php
+					Tiêu đề
+					<input type="text" class="form-control" name="contractor_title" value="<?=esc_attr(get_the_title($contractor))?>">
+				</div>
+				<div class="mb-3">
+					Địa điểm
+					<select id="edit-location-selection" class="select2-hidden-accessible" name="contractor_location[]" multiple>
+						<option value="0">--Không có--</option>
+						<?php
+						if($_locations) {
+							foreach ($_locations as $key => $value) {
+								?>
+								<option value="<?=absint($value->term_id)?>" <?php selected( in_array($value->term_id, $locations), true ); ?>><?=esc_html($value->name)?></option>
+								<?php
+							}
 						}
-					}
-					*/
-				?>
+						?>
+					</select>
+					<?php
+					// ob_start();
+					// 	wp_dropdown_categories([
+					// 		'taxonomy' => 'location',
+					// 		'name' => 'contractor_location[]',
+					// 		'id' => 'edit-location-selection',
+					// 		'class' => 'select2-hidden-accessible',
+					// 		'hide_empty' => false,
+					// 		'selected' => $locations,
+					// 		'hierarchical' => true,
+					// 		'show_option_all'   => '',
+					// 	]);
+					// echo preg_replace('/<select/', '<select multiple', ob_get_clean());
+					?>
 				</div>
 				<div class="mb-3">
 					<button type="submit" class="btn btn-danger text-uppercase fw-bold text-yellow text-nowrap d-block w-100" id="edit-contractor-submit">Lưu lại</button>

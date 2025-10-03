@@ -49,14 +49,22 @@ class Theme {
 		add_action( 'wp_ajax_get_contractor_info', ['\HomeViet\Ajax', 'get_contractor_info'] );
 		add_action( 'wp_ajax_update_contractor_sort', ['\HomeViet\Ajax', 'update_contractor_sort'] );
 		add_action( 'wp_ajax_sort_contractors', ['\HomeViet\Ajax', 'sort_contractors'] );
+
 		add_action( 'wp_ajax_add_to_project', ['\HomeViet\Ajax', 'add_to_project'] );
 		add_action( 'wp_ajax_remove_from_project', ['\HomeViet\Ajax', 'remove_from_project'] );
 
 		add_action( 'wp_ajax_add_to_local_project', ['\HomeViet\Ajax', 'add_to_local_project'] );
 		add_action( 'wp_ajax_remove_from_local_project', ['\HomeViet\Ajax', 'remove_from_local_project'] );
 
+		add_action( 'wp_ajax_add_to_removed', ['\HomeViet\Ajax', 'add_to_removed'] );
+		add_action( 'wp_ajax_remove_from_removed', ['\HomeViet\Ajax', 'remove_from_removed'] );
+
 		add_action( 'wp_ajax_texture_download', ['\HomeViet\Ajax', 'texture_download'] );
 		add_action( 'wp_ajax_nopriv_texture_download', ['\HomeViet\Ajax', 'texture_download'] );
+
+		add_action( 'wp_ajax_add_new_occupation', ['\HomeViet\Ajax', 'add_new_occupation'] );
+		add_action( 'wp_ajax_add_new_contractor', ['\HomeViet\Ajax', 'add_new_contractor'] );
+		add_action( 'wp_ajax_add_new_location', ['\HomeViet\Ajax', 'add_new_location'] );
 	}
 
 	private function hooks_shortcode() {
